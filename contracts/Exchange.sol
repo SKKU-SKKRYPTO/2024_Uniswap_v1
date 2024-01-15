@@ -14,4 +14,11 @@ contract Exchange{
     function addLiquidity(uint256 _tokenAmount) public payable{
         token.transferFrom(msg.sender, address(this), _tokenAmount);
     }
+
+    // ether를 받고 token을 전송하는 함수
+    function ethToTokenSwap() public payable {
+        uint256 tokenAmount = msg.value;
+
+        IERC20(token).transfer(msg.sender, tokenAmount);
+    }
 }
