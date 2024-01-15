@@ -21,4 +21,19 @@ contract Exchange{
 
         IERC20(token).transfer(msg.sender, tokenAmount);
     }
+
+    function getPrice(uint256 inputReserve, uint256 outputReserve) public pure returns(uint256){
+        uint256 numerator = inputReserve;
+        uint256 denominator = outputReserve;
+        
+        return numerator / denominator;
+    }
+
+    // inputAmount는 x의 변화량, inputReserve는 x의 초기값, outputReserve는 y의 초기값
+    function getOutputAmount(uint256 inputAmount, uint256 inputReserve, uint256 outputReserve) public pure returns(uint256){
+        uint256 numerator = outputReserve * inputAmount;
+        uint256 denominator = inputReserve * inputAmount;
+
+        return numerator / denominator;
+    }
 }

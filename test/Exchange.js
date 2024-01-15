@@ -60,4 +60,16 @@ describe("Exchange", () => {
             // user가 가지는 이더리움은 10,000 - 1 = 9,999개이지만, 추가로 가스비까지 빠진다.
         });
     });
+
+    describe("getOutputAmount", async() => {
+        it("getOutputAmount", async() => {
+            await token.approve(exchange.target, toWei(4000));
+            await exchange.addLiquidity(toWei(4000), {value: toWei(1000)});
+            // 토큰4:이더1 비율
+            
+            // 기존 이더 1, 토큰 4 새로들어온 이더 1
+            // 새로들어온 토큰 개수 = 4000 * 1 / (1000 + 1) = 3.996
+            console.log(await exchange.getOutputAmount(toWei(1), provider.getBalance(exchange.target), token.balanceOf(exchange.target)));
+        });
+    });
 })
