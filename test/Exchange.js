@@ -24,21 +24,21 @@ describe("Exchange", () => {
         await exchange.waitForDeployment();
     });
 
-    describe("addLiquidity", async() => {
-        it("add Liquiity", async() => {
-            await token.approve(exchange.target, toWei(1000));
-            await exchange.addLiquidity(toWei(1000), {value: toWei(1000)});
+    // describe("addLiquidity", async() => {
+    //     it("add Liquiity", async() => {
+    //         await token.approve(exchange.target, toWei(1000));
+    //         await exchange.addLiquidity(toWei(1000), {value: toWei(1000)});
             
-            // console.log(exchange.target);
+    //         // console.log(exchange.target);
             
-            // exchange컨트랙트가 이더리움 몇개 가지고 있는지 (에러남 -> 해결)
-            // expect(await getBalance(exchange.target)).to.equal(toWei(1000));
-            expect(await provider.getBalance(exchange.target)).to.equal(toWei(1000)); 
+    //         // exchange컨트랙트가 이더리움 몇개 가지고 있는지 (에러남 -> 해결)
+    //         // expect(await getBalance(exchange.target)).to.equal(toWei(1000));
+    //         expect(await provider.getBalance(exchange.target)).to.equal(toWei(1000)); 
             
-            // exchange컨트랙트가 가지는 gray token의 balance가 1000개인지 확인
-            expect(await token.balanceOf(exchange.target)).to.equal(toWei(1000));
-        });
-    });
+    //         // exchange컨트랙트가 가지는 gray token의 balance가 1000개인지 확인
+    //         expect(await token.balanceOf(exchange.target)).to.equal(toWei(1000));
+    //     });
+    // });
 
     describe("swap", async() => {
         it("swap", async() => {
@@ -110,5 +110,60 @@ describe("Exchange", () => {
         });
     });
 
-    
+    describe("addLiquidity", async() => {
+        it("add Liquiity", async() => {
+            // 토큰 500개, 이더 1000개 유동성 공급
+            await token.approve(exchange.target, toWei(500));
+            await exchange.addLiquidity(toWei(500), {value: toWei(1000)});
+
+            expect(await provider.getBalance(exchange.target)).to.equal(toWei(1000)); 
+            expect(await token.balanceOf(exchange.target)).to.equal(toWei(500));
+
+            // 토큰 100개, 이더 200개 추가 유동성 공급
+            await token.approve(exchange.target, toWei(100));
+            await exchange.addLiquidity(toWei(100), {value: toWei(200)});
+
+            expect(await provider.getBalance(exchange.target)).to.equal(toWei(1200)); 
+            expect(await token.balanceOf(exchange.target)).to.equal(toWei(600));
+
+            // 아래는 안되는 코드임 (유저가 유동성 공급시 받는 LP토큰 개수 확인하려고 만든 코드)
+
+            // 유저의 유동성 공급
+            // await token.transfer(user.address, toWei(100));
+
+            // 유저 계좌 확인
+            // console.log(await provider.getBalance(user.address));
+            // console.log(await token.balanceOf(user.address));
+
+            // await token.connect(user).approve(exchange.target, toWei(100));
+            // await exchange.connect(user).addLiquidity(toWei(100), {value: toWei(200)});
+        });
+    });
+
+    describe("removeLiquiity", async() => {
+        it("removeLiquiity", async() => {
+            // 토큰 500개, 이더 1000개 유동성 공급
+            await token.approve(exchange.target, toWei(500));
+            await exchange.addLiquidity(toWei(500), {value: toWei(1000)});
+
+            expect(await provider.getBalance(exchange.target)).to.equal(toWei(1000)); 
+            expect(await token.balanceOf(exchange.target)).to.equal(toWei(500));
+
+            // 토큰 100개, 이더 200개 추가 유동성 공급
+            await token.approve(exchange.target, toWei(100));
+            await exchange.addLiquidity(toWei(100), {value: toWei(200)});
+
+            expect(await provider.getBalance(exchange.target)).to.equal(toWei(1200)); 
+            expect(await token.balanceOf(exchange.target)).to.equal(toWei(600));
+
+            // 유동성 제거
+            await exchange.removeLiquidity(toWei(300));
+            expect(await provider.getBalance(exchange.target)).to.equal(toWei(900)); 
+            expect(await token.balanceOf(exchange.target)).to.equal(toWei(450));
+
+            // 유동성 공급이나 제거시 xy=k에서 k값이 바뀌게 된다.
+            // CPMM은 스왑과 같이 토큰 비율이 변하는 경우에도 곱의 값이 일정한 것이다.
+            // 유동성 공급으로 인한 x,y변화는 비율이 일정하기 떄문에 k값이 증가한다.
+        });
+    });
 })
