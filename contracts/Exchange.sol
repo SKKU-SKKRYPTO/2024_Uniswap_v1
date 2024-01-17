@@ -4,14 +4,20 @@ pragma solidity ^0.8.19;
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+import "./interfaces/IExchange.sol";
+import "./interfaces/IFactory.sol";
+
 contract Exchange is ERC20{
 
     IERC20 public token;
-
+    IFactory factory;
     // 이름과 토큰 이름 고정
     // 민팅이나 번 될때는 주소값으로 접근하므로 이름이나 토큰 이름 겹쳐도 상관없다
     constructor(address _token) ERC20("Gray Uniswap", "GUNI"){
         token = IERC20(_token);
+        // factory 컨트랙트 주소를 저장한다.
+        // Exchange 컨트랙트에서는 factory 컨트랙트 주소를 통해 다른 컨트랙트에 접근할 수 있다.
+        factory = IFactory(msg.sender);
     }
 
     // function addLiquidity(uint256 _tokenAmount) public payable{
