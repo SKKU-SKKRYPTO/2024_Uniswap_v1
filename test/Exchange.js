@@ -45,7 +45,7 @@ describe("Exchange", () => {
             await token.approve(exchange.target, toWei(1000));
             await exchange.addLiquidity(toWei(1000), {value: toWei(1000)});
             
-            await exchange.connect(user).ethToTokenSwap({value: toWei(1)});
+            await exchange.connect(user).ethToTokenSwapCSMM({value: toWei(1)});
             
             // exchange컨트랙트가 이더리움 몇개 가지고 있는지
             expect(await provider.getBalance(exchange.target)).to.equal(toWei(1001)); 
@@ -64,12 +64,51 @@ describe("Exchange", () => {
     describe("getOutputAmount", async() => {
         it("getOutputAmount", async() => {
             await token.approve(exchange.target, toWei(4000));
-            await exchange.addLiquidity(toWei(4000), {value: toWei(1000)});
             // 토큰4:이더1 비율
-            
-            // 기존 이더 1, 토큰 4 새로들어온 이더 1
-            // 새로들어온 토큰 개수 = 4000 * 1 / (1000 + 1) = 3.996
+            await exchange.addLiquidity(toWei(4000), {value: toWei(1000)});
+
+
+            // 새로들어온 이더 1, ETH 초기값은 컨트랙트의 balance, 토큰의 초기값은 컨트랙트의 토큰 balance
+            // console.log(await provider.getBalance(exchange.target))
+            // console.log(await token.balanceOf(exchange.target))
+            // console.log(toWei(1))
             console.log(await exchange.getOutputAmount(toWei(1), provider.getBalance(exchange.target), token.balanceOf(exchange.target)));
         });
     });
+
+    describe("ethToTokenSwap", async() => {
+        it("ethToTokenSwap", async() => {
+            await token.approve(exchange.target, toWei(4000));
+            // GRAY:ETH 4:1
+            await exchange.addLiquidity(toWei(4000), {value: toWei(1000)});
+            
+            console.log(await token.balanceOf(user.address));
+            // 여기서 {value: toWei(1)}는 1eth를 msg.value에 담는다는 뜻
+            await exchange.connect(user).ethToTokenSwap(toWei(3.99), {value: toWei(1)});
+            // 여기서 4가 나오지 않는다. 4와 현재 token.balance간의 차이가 슬리피지이다.
+            console.log(await token.balanceOf(user.address));
+        });
+    });
+
+    describe("tokenToEthSwap", async() => {
+        it("tokenToEthSwap", async() => {
+            await token.approve(exchange.target, toWei(4010));
+            // GRAY:ETH 4:1
+            await exchange.addLiquidity(toWei(4010), {value: toWei(1000)});
+            // 컨트랙트에서 유저에게 토큰 전송
+            await token.transfer(user.address, toWei(10));
+
+            console.log(await provider.getBalance(user.address));
+            console.log(await token.balanceOf(user.address));
+            // approve를 해줘야한다. (이더리움을 전송하는 것이 아니라 토큰을 전송하는 것이기 때문)
+            // approve를 하지 않으면 tokenToEthSwap에서 에러가 난다.
+            await token.connect(user).approve(exchange.target, toWei(10));
+            // 여기 아래에 tokenToEthSwap에 token 1개를 전송하는 코드이다
+            await exchange.connect(user).tokenToEthSwap(toWei(1), toWei(0.24931));
+            console.log(await provider.getBalance(user.address));
+            console.log(await token.balanceOf(user.address));
+        });
+    });
+
+    
 })
