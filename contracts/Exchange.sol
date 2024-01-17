@@ -100,6 +100,15 @@ contract Exchange is ERC20{
 
     // ETH -> ERC20
     function ethToTokenSwap(uint256 _minTokens) public payable{
+        ethToToken(_minTokens, msg.sender);
+    }
+
+    // ETH -> ERC20
+    function ethToTokenTransfer(uint256 _minTokens, address _recipient) public payable{
+        ethToToken(_minTokens, _recipient);
+    }
+
+    function ethToToken(uint256 _minTokens, address _recipient) public payable{
         // uint256 inputAmount = msg.value;
 
         // address(this).balance - msg.value를 하는 이유는
@@ -108,7 +117,7 @@ contract Exchange is ERC20{
 
         require(outputAmount >= _minTokens, "Inffucient output amount");
 
-        IERC20(token).transfer(msg.sender, outputAmount);
+        IERC20(token).transfer(_recipient, outputAmount);
     }
 
     // ERC20 -> ETH
@@ -121,5 +130,22 @@ contract Exchange is ERC20{
 
         IERC20(token).transferFrom(msg.sender, address(this), _tokenSold);
         payable(msg.sender).transfer(outputAmount);
+    }
+
+    // ERC20 -> ETH
+    // _minTokenBought는 최종적으로 swap했을 때 얻는 erc20의 최소값
+    // swap을 하기 전에 getOutputAmount를 통해 swap하게 될 eth개수를 얻어오는데, 이때 중간에서 사용될 eth양이 _minEthBought보다 커야한다 
+    function tokenToTokenSwap(uint256 _tokenSold, uint256 _minTokenBought, uint256 _minEthBought, address _tokenAddress) public payable{
+        
+        address toTokenExchangeAddress = factory.getExchange(_tokenAddress);
+
+        uint256 ethOutputAmount = getOutputAmountWithFee(_tokenSold, token.balanceOf(address(this)), address(this).balance);
+
+        require(ethOutputAmount >= _minEthBought, "Inffucient output amount");
+
+        IERC20(token).transferFrom(msg.sender, address(this), _tokenSold);
+        // 새로운 인터페이스 정의하고 swap함수 호출
+        IExchange(toTokenExchangeAddress).ethToTokenTransfer{value: ethOutputAmount}(_minTokenBought, msg.sender);
+        // payable(msg.sender).transfer(ethOutputAmount);
     }
 }

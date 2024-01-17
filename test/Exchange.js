@@ -11,17 +11,22 @@ describe("Exchange", () => {
     let user;
     let exchange;
     let token;
+    let factory;
 
     beforeEach(async () => {
         //기본적으로 10,000개의 Ether를 가지고 있음.
-        [owner, user] = await ethers.getSigners();
-        const TokenFactory = await ethers.getContractFactory("Token");
-        token = await TokenFactory.deploy("GrayToken", "GRAY", toWei(1000000));
-        await token.waitForDeployment();
+        // [owner, user] = await ethers.getSigners();
+        // const TokenFactory = await ethers.getContractFactory("Token");
+        // token = await TokenFactory.deploy("GrayToken", "GRAY", toWei(1000000));
+        // await token.waitForDeployment();
 
-        const ExchangeFactory = await ethers.getContractFactory("Exchange");
-        exchange = await ExchangeFactory.deploy(token.target);
-        await exchange.waitForDeployment();
+        // const ExchangeFactory = await ethers.getContractFactory("Exchange");
+        // exchange = await ExchangeFactory.deploy(token.target);
+        // await exchange.waitForDeployment();
+
+        // const FactoryFactory = await ethers.getContractFactory("Factory");
+        // const factory = await FactoryFactory.deploy();
+        // await factory.waitForDeployment();
     });
 
     // describe("addLiquidity", async() => {
@@ -170,7 +175,7 @@ describe("Exchange", () => {
     });
 
     describe("swapWithFee", async() => {
-        it.only("swapWithFee", async() => {
+        it("swapWithFee", async() => {
             await token.approve(exchange.target, toWei(50));
             // 유동성 공급 eth 50, gray 50
             await exchange.addLiquidity(toWei(50), {value: toWei(50)});
@@ -186,4 +191,50 @@ describe("Exchange", () => {
         });
     });
 
+    describe("tokenToTokenSwap", async() => {
+        it.only("tokenToTokenSwap", async() => {
+            [owner, user] = await ethers.getSigners();
+
+            const FactoryFactory = await ethers.getContractFactory("Factory");
+            const factory = await FactoryFactory.deploy();
+            await factory.waitForDeployment();
+
+            // GRAY 토큰 생성
+            const TokenFactory = await ethers.getContractFactory("Token");
+            const token = await TokenFactory.deploy("GrayToken", "GRAY", toWei(1010));
+            await token.waitForDeployment();
+
+            // FAST 토큰 생성
+            const TokenFactory2 = await ethers.getContractFactory("Token");
+            const token2 = await TokenFactory2.deploy("FastToken", "FAST", toWei(1000));
+            await token2.waitForDeployment();
+
+            const ExchangeFactory = await ethers.getContractFactory("Exchange");
+            exchange = await ExchangeFactory.deploy(token.target);
+            await exchange.waitForDeployment();
+
+
+            // GRAY/eth 페어 생성
+            await factory.createExchange(token.target);
+            const exchangeAddress = await factory.getExchange(token.target);
+            // FAST/eth 페어 생성
+            await factory.createExchange(token2.target);
+            const exchange2Address = await factory.getExchange(token2.target);
+
+            await token.approve(exchangeAddress, toWei(1000));
+            await token2.approve(exchange2Address, toWei(1000));
+
+            // GRAY/eth 페어에 GRAY 1000개, eth 1000개 유동성 공급
+            await ExchangeFactory.attach(exchangeAddress).addLiquidity(toWei(1000), {value: toWei(1000)});
+            // FAST/eth 페어에 FAST 1000개, eth 1000개 유동성 공급
+            await ExchangeFactory.attach(exchange2Address).addLiquidity(toWei(1000), {value: toWei(1000)});
+            
+            await token.approve(exchangeAddress, toWei(10));
+            await ExchangeFactory.attach(exchangeAddress).tokenToTokenSwap(toWei(10), toWei(9), toWei(9), token2.target)
+
+            console.log(await token2.balanceOf(owner.address))
+            console.log(await token2.balanceOf(exchangeAddress))
+        });
+    });
+        
 })
