@@ -76,6 +76,7 @@ describe("Exchange", () => {
         });
     });
 
+    // 수수료 부과하지 않으면 테스트 통과
     describe("ethToTokenSwap", async() => {
         it("ethToTokenSwap", async() => {
             await token.approve(exchange.target, toWei(4000));
@@ -90,6 +91,7 @@ describe("Exchange", () => {
         });
     });
 
+    // 수수료 부과하지 않으면 테스트 통과
     describe("tokenToEthSwap", async() => {
         it("tokenToEthSwap", async() => {
             await token.approve(exchange.target, toWei(4010));
@@ -166,4 +168,22 @@ describe("Exchange", () => {
             // 유동성 공급으로 인한 x,y변화는 비율이 일정하기 떄문에 k값이 증가한다.
         });
     });
+
+    describe("swapWithFee", async() => {
+        it.only("swapWithFee", async() => {
+            await token.approve(exchange.target, toWei(50));
+            // 유동성 공급 eth 50, gray 50
+            await exchange.addLiquidity(toWei(50), {value: toWei(50)});
+            
+            // 유저 eth 30, gray 18.632371392722710163 스왑
+            await exchange.connect(user).ethToTokenSwap(toWei(18), {value: toWei(30)});
+
+            // 스왑 후 유저의 gray 잔액 18.632371392722710163
+            console.log(await token.balanceOf(user.address));
+            console.log(await token.balanceOf(exchange.target));
+
+            // 만약 수수료가 없다면 gray 18.75를 받아야 한다
+        });
+    });
+
 })
